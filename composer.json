@@ -1,5 +1,5 @@
 {
-    "name": "amoriumcms/amorium-plugin",
+    "name": "amoriumcms/plugin",
     "type": "october-plugin",
     "description": "Pages, sections, posts, navigation, forms, business details, demo content and AI translation for the Amorium theme",
     "require": {
