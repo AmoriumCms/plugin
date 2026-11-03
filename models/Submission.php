@@ -2,6 +2,7 @@
 
 use Model;
 use System\Models\SiteDefinition;
+use Illuminate\Database\QueryException;
 
 /**
  * Submission is a form posted from a Form section. The "data" column holds
@@ -45,11 +46,17 @@ class Submission extends Model
     ];
 
     /**
-     * countUnread is shown next to the Forms menu item.
+     * countUnread is shown next to the Forms menu item. The backend menu is drawn
+     * while the plugin is being installed, before its tables are migrated.
      */
     public static function countUnread()
     {
-        return static::whereNull('read_at')->count() ?: null;
+        try {
+            return static::whereNull('read_at')->count() ?: null;
+        }
+        catch (QueryException $ex) {
+            return null;
+        }
     }
 
     /**

@@ -8,6 +8,7 @@ use Cms\Controllers\ThemeOptions;
 use Tailor\Models\EntryRecord;
 use Tailor\Models\RepeaterItem;
 use Tailor\Controllers\Entries;
+use Tailor\Classes\BlueprintIndexer;
 use System\Classes\PluginBase;
 use System\Classes\SettingsManager;
 use AmoriumCms\Amorium\Classes\BulkTranslation;
@@ -58,6 +59,7 @@ class Plugin extends PluginBase
         $this->bootSections();
         $this->bootBusiness();
         $this->bootPagesMenu();
+        $this->bootMigrations();
 
         EntryTranslator::boot();
         BulkTranslation::boot();
@@ -198,6 +200,17 @@ class Plugin extends PluginBase
 
             $model->bindEvent('model.afterSave', $export);
             $model->bindEvent('model.afterDelete', $export);
+        });
+    }
+
+    /**
+     * bootMigrations migrates the Tailor content tables together with the database, so
+     * installing or updating from the backend needs no separate tailor:migrate.
+     */
+    protected function bootMigrations()
+    {
+        Event::listen('system.updater.migrate', function () {
+            BlueprintIndexer::instance()->migrate();
         });
     }
 
