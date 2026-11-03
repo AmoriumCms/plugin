@@ -9,3 +9,4 @@ v1.0.1: Blog list and blog detail sections, page slugs kept in sync on every sit
 v1.0.2: The Composer package is renamed to amoriumcms/plugin
 v1.0.3: The Composer package is named amoriumcms/amorium-plugin again so it installs as AmoriumCms.Amorium
 v1.0.4: Release of the package name fix, the v1.0.3 tag points to the earlier commit
+v1.0.5: Supports composer/installers 2 and adds license information
