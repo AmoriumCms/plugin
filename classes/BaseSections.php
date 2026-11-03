@@ -1,17 +1,24 @@
 <?php namespace AmoriumCms\Amorium\Classes;
 
 use File;
+use Event;
 use Tailor\Models\EntryRecord;
 
 /**
  * BaseSections keeps the default sections in a JSON file so they can be
  * created again on a fresh install or after they were deleted.
+ *
+ * Other plugins add their own sections by returning the path of a JSON file
+ * in the same format from the amorium.sections.basePaths event. Those
+ * sections are written back to the file of their plugin on export.
  */
 class BaseSections
 {
     public const HANDLE = 'Amorium\Section';
 
     public const ATTRIBUTES = ['title', 'slug', 'html', 'fields_definition', 'css', 'js'];
+
+    public const EVENT = 'amorium.sections.basePaths';
 
     /**
      * path of the JSON file
@@ -22,7 +29,27 @@ class BaseSections
     }
 
     /**
-     * export writes the current sections to the JSON file and returns their count.
+     * extraPaths returns the JSON files added by other plugins
+     */
+    public static function extraPaths(): array
+    {
+        $paths = [];
+
+        foreach ((array) Event::fire(static::EVENT) as $result) {
+            foreach ((array) $result as $path) {
+                if (is_string($path) && $path !== '' && $path !== static::path()) {
+                    $paths[] = $path;
+                }
+            }
+        }
+
+        return array_values(array_unique($paths));
+    }
+
+    /**
+     * export writes the current sections to the JSON files and returns their count.
+     * A section listed in the file of another plugin is updated in that file, the
+     * sections of that file missing on this site are kept.
      */
     public static function export(): int
     {
@@ -33,17 +60,33 @@ class BaseSections
                 fn ($value) => str_replace("\r\n", "\n", (string) $value),
                 $record->only(static::ATTRIBUTES)
             ))
-            ->values()
-            ->all();
+            ->keyBy('slug');
 
-        File::makeDirectory(dirname(static::path()), 0755, true, true);
-        File::put(static::path(), json_encode($sections, JSON_PRETTY_PRINT | JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES) . "\n");
+        $count = 0;
 
-        return count($sections);
+        foreach (static::extraPaths() as $path) {
+            $owned = static::read($path);
+            if (!$owned) {
+                continue;
+            }
+
+            foreach ($owned as $index => $data) {
+                if ($section = $sections->pull($data['slug'])) {
+                    $owned[$index] = $section;
+                    $count++;
+                }
+            }
+
+            static::write($path, $owned);
+        }
+
+        static::write(static::path(), $sections->values()->all());
+
+        return $count + $sections->count();
     }
 
     /**
-     * create adds the sections from the JSON file whose slug is not in use
+     * create adds the sections from the JSON files whose slug is not in use
      * and returns the titles of the created and skipped sections.
      */
     public static function create(): array
@@ -79,19 +122,44 @@ class BaseSections
     }
 
     /**
-     * load
+     * load returns the sections of every JSON file, the first file using a slug wins
      */
     protected static function load(): array
     {
-        if (!File::exists(static::path())) {
+        $sections = [];
+
+        foreach (array_merge([static::path()], static::extraPaths()) as $path) {
+            foreach (static::read($path) as $data) {
+                $sections[$data['slug']] ??= $data;
+            }
+        }
+
+        return array_values($sections);
+    }
+
+    /**
+     * read
+     */
+    protected static function read(string $path): array
+    {
+        if (!File::exists($path)) {
             return [];
         }
 
-        $sections = json_decode(File::get(static::path()), true);
+        $sections = json_decode(File::get($path), true);
 
         return array_values(array_filter(
             is_array($sections) ? $sections : [],
             fn ($data) => is_array($data) && !empty($data['slug']) && !empty($data['title'])
         ));
+    }
+
+    /**
+     * write
+     */
+    protected static function write(string $path, array $sections): void
+    {
+        File::makeDirectory(dirname($path), 0755, true, true);
+        File::put($path, json_encode(array_values($sections), JSON_PRETTY_PRINT | JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES) . "\n");
     }
 }

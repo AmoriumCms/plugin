@@ -68,6 +68,14 @@ fields:
                     translatable: false
                     comment: Leave empty for a transparent background.
 
+                section_spacing:
+                    label: Spacing
+                    type: dropdown
+                    emptyOption: Default (md:py-24 py-16)
+                    options: AmoriumCms\Amorium\Classes\SectionRenderer::spacingOptions
+                    translatable: false
+                    comment: The choices are listed under sectionSpacings in theme.yaml.
+
                 section_data:
                     type: sectionfields
                     dependsOn: section
