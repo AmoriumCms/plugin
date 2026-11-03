@@ -7,3 +7,4 @@ v1.0.0:
     - remove_old_plugins.php
 v1.0.1: Blog list and blog detail sections, page slugs kept in sync on every site, mail settings test
 v1.0.2: The Composer package is renamed to amoriumcms/plugin
+v1.0.3: The Composer package is named amoriumcms/amorium-plugin again so it installs as AmoriumCms.Amorium
