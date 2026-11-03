@@ -5,3 +5,4 @@ v1.0.0:
     - create_translate_memory_table.php
     - remove_site_copies.php
     - remove_old_plugins.php
+v1.0.1: Blog list and blog detail sections, page slugs kept in sync on every site, mail settings test
